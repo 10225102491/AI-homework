@@ -1,0 +1,52 @@
+#include<stdio.h>
+#include<stdlib.h>
+int node[100010];
+struct edge{
+	int val;
+	int next;
+}e[100010];
+struct lis{
+	int val;
+	int step;
+	struct lis* next;
+};
+inline void connect(int from,int to,int id){
+	e[id].val=to;
+	e[id].next = node[from];
+	node[from] = id;
+}
+inline struct lis* create(int val,int step){
+	struct lis* temp = (struct lis*)malloc(sizeof(struct lis));
+	temp->next=NULL;
+	temp->step=step;
+	temp->val=val;
+	return temp;
+}
+int main(){
+	int n,m,t1,t2;
+	scanf("%d %d",&n,&m);
+	for(int i=0;i<=n;i++)
+		node[i]=-1;
+	for(int i=0;i<m;i++){
+		scanf("%d %d",&t1,&t2);
+		if(t1==t2) 
+			continue;
+		connect(t1,t2,i<<1);
+		connect(t2,t1,i<<1|1);
+	}
+	struct lis *head = create(1,0);
+	struct lis *tail = head,*temp;
+	while(head&&head->val!=n){
+		t1 = node[head->val];
+		while(~t1){
+			temp = create(e[t1].val,head->step+1);
+			tail->next = temp;
+			tail = temp;
+			t1=e[t1].next;
+		}
+		node[head->val]=-1;
+		head=head->next;
+	}
+	printf("%d\n",head?head->step:-1);
+	return 0;
+}
