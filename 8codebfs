@@ -1,0 +1,101 @@
+#include<stdio.h>
+#include<stdlib.h>
+long long terminal = 123456789;
+int der[4][2] = {{1,0},{0,1},{-1,0},{0,-1}};
+struct mystack{
+	int state;
+	int condition;
+	long long t;
+}stk[400000];
+
+struct hash{
+	long long val;
+	int used;
+	int minsteps;
+}states[4000010];
+
+int findkey(long long n){
+	long long mod = 4000007,key;
+	key = n%mod;
+	while(states[key].val&&states[key].val!=n) key++;
+	if(states[key].val != n)
+		states[key].used = -1;
+	states[key].val = n;
+	return int(key);  
+}
+
+int findCondition(long long t){
+	int condition = 1;
+	while(t%10!=9){
+		t/=10;
+		condition ++;
+	}
+	return 9-condition;
+}
+
+long long getNewNum(int x1,int y1,int x2,int y2,long long t){
+	if(x1<0||x1>2||y1<0||y1>2) return -1;
+	long long tmp[3][3],digit;
+	for(int i=8;i>-1;i--){
+		tmp[i/3][i%3] = t%10;
+		t/=10;
+	}
+	digit = tmp[x1][y1];
+	tmp[x1][y1] = tmp[x2][y2];
+	tmp[x2][y2] = digit;
+	for(int i=0;i<9;i++){
+		t*=10;
+		t+=tmp[i/3][i%3];
+	}
+	int key = findkey(t);
+	if(states[key].used != 1)
+		states[key].used = 1;
+	else
+		t = -1;
+	return t;
+}
+
+void setstk(int top,int state,int condition,long long t){
+	stk[top].condition = condition;
+	stk[top].state = state;
+	stk[top].t = t;
+}
+
+int dfs(long long t){
+	int top=0,condition;
+	setstk(top,0,0,t);
+	while(1){
+		//printf("%lld %d\n",stk[top].t,top);
+		if(top==-1) 
+			return 0;
+		if(stk[top].t==terminal)
+			return 1;
+		if(stk[top].state==0){
+			condition = findCondition(stk[top].t);
+			setstk(top,stk[top].state,condition,stk[top].t);
+		}
+		if(stk[top].state==4){
+			top--;
+			continue;
+		}
+		long long newnum = getNewNum(stk[top].condition/3+der[stk[top].state][0],stk[top].condition%3+der[stk[top].state][1],stk[top].condition/3,stk[top].condition%3,stk[top].t);
+		stk[top].state++;
+		if(newnum!=-1){
+			setstk(top+1,0,0,newnum);
+			top++;
+		}
+	}
+}
+int main(){
+	long long num = 0;
+	char t;
+	for(int i=0;i<9;i++){
+		num *= 10;
+		scanf("%c",&t);
+		if(t=='x'||t=='0') num += 9;
+		else num += t-'0';
+	}
+	states[findkey(num)].used = 1;
+	printf("%d",dfs(num));
+	return 0;
+}
