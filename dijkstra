@@ -1,0 +1,118 @@
+#include<stdio.h>
+const long long inf = 1e18;
+int p=0;
+int ans[150010];
+struct Node{
+	int edge;
+	int from;
+	long long step;
+}node[150010];
+struct edge{
+	int val;
+	int next;
+	long long lenth;
+}e[300010];
+struct heap{
+	long long lenth;
+	int node;
+}hp[1000010];
+inline void connect(int from,int to,long long lenth,int id){
+	e[id].val = to;
+	e[id].next = node[from].edge;
+	e[id].lenth = lenth;
+	node[from].edge = id;
+}
+void swap(int i,int j){
+	long long t = hp[i].lenth;
+	hp[i].lenth = hp[j].lenth;
+	hp[j].lenth = t;
+	t = hp[i].node;
+	hp[i].node = hp[j].node;
+	hp[j].node = t;
+}
+void adjust(){
+	int t=1;
+	while(1){
+		if((t<<1) > p)
+			return;
+		if((t<<1|1) > p){
+			if(hp[t].lenth>hp[t<<1].lenth)
+				swap(t,t<<1);
+			return;
+		}
+		if(hp[t].lenth <= hp[t<<1].lenth && hp[t].lenth <= hp[t<<1|1].lenth)
+			return;
+		if(hp[t<<1].lenth < hp[t<<1|1].lenth){
+			swap(t,t<<1);
+			t = t<<1;
+		}else{
+			swap(t,t<<1|1);
+			t = t<<1|1;
+		}
+	}
+}
+int pop(){
+	int ret = hp[1].node;
+	hp[1].lenth = hp[p].lenth;
+	hp[1].node = hp[p--].node;
+	adjust();
+	return ret;
+}
+void push(int val,long long lenth){
+	int t = ++p;
+	hp[t].node = val;
+	hp[t].lenth = lenth;
+	while(t>1&&hp[t].lenth < hp[t>>1].lenth){
+		swap(t,t>>1);
+		t = t>>1;
+	}
+}
+int main(){
+	int n,m,t1,t2;
+	long long l;
+	scanf("%d %d",&n,&m);
+	for(int i=0;i<=n;i++){
+		node[i].edge = -1;
+		node[i].step = inf;
+		node[i].from = -1;
+	}
+	for(int i=0;i<m;i++){
+		scanf("%d %d %lld",&t1,&t2,&l);
+		if(t1==t2) 
+			continue;
+		connect(t1,t2,l,i<<1);
+		connect(t2,t1,l,i<<1|1);
+	}
+	node[1].step=0;
+	push(1,0);
+	while(p){
+		t2 = pop();
+		if(t2 == n)       
+			break;
+		t1 = node[t2].edge;
+		while(~t1){
+			if(node[e[t1].val].step > node[t2].step + e[t1].lenth){
+				node[e[t1].val].from = t2;
+				node[e[t1].val].step = node[t2].step + e[t1].lenth;
+				push(e[t1].val,node[t2].step + e[t1].lenth);
+			}
+			t1=e[t1].next;
+		}
+		node[t2].edge=-1;
+	}
+	printf("%d\n",node[n].step==inf?-1:node[n].step);
+	/*if(node[n].from==-1)
+	    printf("-1");
+	else{
+	    t1=0;t2=n;
+	    while(t2!=1){
+		    ans[t1++]=t2;
+		    t2=node[t2].from;
+	    }
+	    ans[t1] = 1;
+	    printf("%d",ans[t1--]);
+	    while(~t1)
+		    printf(" %d",ans[t1--]);
+	}*/
+	return 0;
+}
