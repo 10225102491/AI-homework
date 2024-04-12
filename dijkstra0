@@ -69,8 +69,7 @@ int main(){
 		scanf("%d %d %lld",&t1,&t2,&l);
 		if(t1==t2) 
 			continue;
-		connect(t1,t2,l,i<<1);
-		connect(t2,t1,l,i<<1|1);
+		connect(t1,t2,l,i);
 	}
 	struct lis* head = create(1,0);
 	node[1].step=0;
