@@ -1,0 +1,120 @@
+#include<stdio.h>
+#include<stdlib.h>
+long long terminal = 123456789;//123894765;
+const int inf = 1e9;
+struct hash{
+	long long val;
+	int dis[2];
+}states[1000010];
+struct lis{
+	int key;
+	char d;
+	struct lis* next;
+};
+inline struct lis* create(int key,char d){
+	struct lis* temp =(struct lis*)malloc(sizeof(struct lis));
+	temp->key = key;
+	temp->d = d;
+	temp->next = NULL;
+	return temp;
+}
+inline int findkey(long long n){
+	long long mod = 1000007,key;
+	key = n%mod;
+	while(states[key].val&&states[key].val!=n) key++;
+	if(states[key].val != n){
+		states[key].dis[0] = inf;
+		states[key].dis[1] = inf;
+	}
+	states[key].val = n;
+	return int(key);  
+}
+inline int findCondition(long long t){
+	int condition = 1;
+	while(t%10!=9){
+		t/=10;
+		condition ++;
+	}
+	return 9-condition;
+}
+int getNewNum(int x1,int y1,int x2,int y2,long long t){
+	if(x1<0||x1>2||y1<0||y1>2) return -1;
+	long long tmp[3][3],digit;
+	for(int i=8;i>-1;i--){
+		tmp[i/3][i%3] = t%10;
+		t/=10;
+	}
+	digit = tmp[x1][y1];
+	tmp[x1][y1] = tmp[x2][y2];
+	tmp[x2][y2] = digit;
+	for(int i=0;i<9;i++){
+		t*=10;
+		t+=tmp[i/3][i%3];
+	}
+    int key = findkey(t);
+	return key;
+}
+struct lis* addNextState(struct lis* tail,int key,char d){
+	int der[4][2] = {{1,0},{0,1},{-1,0},{0,-1}},condition = findCondition(states[key].val);
+	for(int i=0;i<4;i++){
+		int newkey = getNewNum(condition/3+der[i][0],condition%3+der[i][1],condition/3,condition%3,states[key].val);
+		if(~newkey&&states[key].dis[d]+1 < states[newkey].dis[d]){
+			//states[newkey].from = i;
+			states[newkey].dis[d] = states[key].dis[d]+1;
+			tail->next = create(newkey,d);
+			tail = tail->next;
+		}
+	}
+	return tail;
+}
+int checkValid(long long x,long long y){
+	int sum=0;
+	char temp[9];
+	for(int i=0;i<9;i++){
+		temp[8-i]=x%10;
+		x/=10;
+	}
+	for(int i=0;i<9;i++)
+		for(int j=i+1;j<9;j++)
+			if(temp[i]!=9&&temp[j]!=9&&temp[i]>temp[j])
+				sum++;
+	for(int i=0;i<9;i++){
+		temp[8-i]=y%10;
+		y/=10;
+	}
+	for(int i=0;i<9;i++)
+		for(int j=i+1;j<9;j++)
+			if(temp[i]!=9&&temp[j]!=9&&temp[i]>temp[j])
+				sum++;
+	return sum&1;
+}
+int main(){
+	long long state = 0;
+	char t;
+	int key;
+	for(int i=0;i<9;i++){
+		state *= 10;
+		scanf("%c",&t);
+		getchar();
+		if(t=='x'||t=='0') state += 9;
+		else state += t-'0';
+	}
+	if(checkValid(state,terminal)){
+		printf("-1");
+		return 0;
+	}
+	key = findkey(state);
+	states[key].dis[0]=0;
+	struct lis* head =create(key,0),*tail;
+	key = findkey(terminal);
+	states[key].dis[1]=0;
+	tail = create(key,1);
+	head->next = tail;
+	while(states[head->key].dis[0] + states[head->key].dis[1] >= inf){
+		tail = addNextState(tail,head->key,head->d);
+		head = head->next;
+	}
+	printf("%d\n",states[head->key].dis[0]+states[head->key].dis[1]);
+	return 0;
+}
+//23415x768
