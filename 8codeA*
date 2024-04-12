@@ -1,0 +1,180 @@
+#include<stdio.h>
+const int inf = 1e9;
+char ans[40];
+char d[4] = {'d','r','u','l'};
+int place[10][2],p=0;
+long long terminal = 123456789/*123894765*/;
+struct hash{
+	long long val;
+	int lenth;
+	int fromkey;
+	char d;
+}states[1000010];
+struct heap{
+	int node;
+	int lenth;
+}hp[400010];
+void swap(int i,int j){
+	long long t = hp[i].lenth;
+	hp[i].lenth = hp[j].lenth;
+	hp[j].lenth = t;
+	t = hp[i].node;
+	hp[i].node = hp[j].node;
+	hp[j].node = t;
+}
+void adjust(){
+	int t=1;
+	while(1){
+		if((t<<1) > p)
+			return;
+		if((t<<1|1) > p){
+			if(hp[t].lenth>hp[t<<1].lenth)
+				swap(t,t<<1);
+			return;
+		}
+		if(hp[t].lenth <= hp[t<<1].lenth && hp[t].lenth <= hp[t<<1|1].lenth)
+			return;
+		if(hp[t<<1].lenth < hp[t<<1|1].lenth){
+			swap(t,t<<1);
+			t = t<<1;
+		}else{
+			swap(t,t<<1|1);
+			t = t<<1|1;
+		}
+	}
+}
+int pop(){
+	int ret = hp[1].node;
+	hp[1].lenth = hp[p].lenth;
+	hp[1].node = hp[p--].node;
+	adjust();
+	return ret;
+}
+void push(int val,int lenth){
+	int t = ++p;
+	hp[t].node = val;
+	hp[t].lenth = lenth;
+	while(t>1&&hp[t].lenth < hp[t>>1].lenth){
+		swap(t,t>>1);
+		t = t>>1;
+	}
+}
+void init(){
+	long long t = terminal;
+	for(int i=8;i>=0;i--){
+		place[t%10][0] = i/3;
+		place[t%10][1] = i%3;
+	}
+}
+int findkey(long long n){
+	long long mod = 1000007,key;
+	key = n%mod;
+	while(states[key].val&&states[key].val!=n) key++;
+	if(states[key].val != n)
+		states[key].lenth = inf;
+	states[key].val = n;
+	return (int)key;  
+}
+int findCondition(long long t){
+	int condition = 1;
+	while(t%10!=9){
+		t/=10;
+		condition ++;
+	}
+	return 9-condition;
+}
+int getNewNum(int x1,int y1,int x2,int y2,long long t){
+	if(x1<0||x1>2||y1<0||y1>2) return -1;
+	long long tmp[3][3],digit;
+	for(int i=8;i>-1;i--){
+		tmp[i/3][i%3] = t%10;
+		t/=10;
+	}
+	digit = tmp[x1][y1];
+	tmp[x1][y1] = tmp[x2][y2];
+	tmp[x2][y2] = digit;
+	for(int i=0;i<9;i++){
+		t*=10;
+		t+=tmp[i/3][i%3];
+	}
+	return findkey(t);
+}
+int abs(int x,int y){
+	return x-y>0?x-y:y-x;
+}
+int h(long long t){
+	int dis=0;
+	for(int i=8;i>=0;i--){
+		dis += abs(i/3,place[t%10][0]);
+		dis += abs(i%3,place[t%10][1]);
+	}
+	return dis; 
+}
+void addNextState(int key){
+	int der[4][2] = {{1,0},{0,1},{-1,0},{0,-1}},condition = findCondition(states[key].val);
+	for(int i=0;i<4;i++){
+		int newkey = getNewNum(condition/3+der[i][0],condition%3+der[i][1],condition/3,condition%3,states[key].val);
+		if(~newkey&&states[key].lenth+1 < states[newkey].lenth){
+			states[newkey].d = i;
+			states[newkey].fromkey = key;
+			states[newkey].lenth = states[key].lenth+1;
+			push(newkey, states[newkey].lenth + h(states[newkey].val));	
+		}
+	}
+}
+int checkValid(long long x,long long y){
+	int sum=0;
+	char temp[9];
+	for(int i=0;i<9;i++){
+		temp[8-i]=x%10;
+		x/=10;
+	}
+	for(int i=0;i<9;i++)
+		for(int j=i+1;j<9;j++)
+			if(temp[i]!=9&&temp[j]!=9&&temp[i]>temp[j])
+				sum++;
+	for(int i=0;i<9;i++){
+		temp[8-i]=y%10;
+		y/=10;
+	}
+	for(int i=0;i<9;i++)
+		for(int j=i+1;j<9;j++)
+			if(temp[i]!=9&&temp[j]!=9&&temp[i]>temp[j])
+				sum++;
+	return sum&1;
+}
+int main(){
+	long long start = 0;
+	char t;
+	int key,q=0;
+	init();
+	for(int i=0;i<9;i++){
+		start *= 10;
+		scanf("%c",&t); 
+		getchar();
+		if(t=='x'||t=='0') start += 9;
+		else start += t-'0';
+	}
+	if(checkValid(start,terminal)){
+		printf("unsolvable\n");
+		return 0;
+	}
+	key = findkey(start);
+	push(key,h(start));
+	states[key].lenth = 0;
+	while(p){
+		int t1 = pop();
+		if(states[t1].val == terminal)
+			break;
+		addNextState(t1);
+	}
+	key = findkey(terminal);
+	while(states[key].val!=start){
+		ans[q++] = d[states[key].d];
+		key = states[key].fromkey;
+	}
+	while(q--)
+		printf("%c",ans[q]);
+	return 0;
+}
+//2 3 4 1 5 x 7 6 8
